@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bkcolor"
+    tools:context="com.github.tsiangleo.tfdemo.MainActivity">
+
+
+
+    <TextView
+        android:layout_margin="10px"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:textSize="12pt"
+        android:textColor="#000000"
+        android:gravity="center"
+        android:text="TensorFlow Android Demo\n Test MNIST Database "/>
+
+    <ImageView
+        android:id="@+id/imgView"
+        android:layout_margin="10px"
+        android:layout_gravity="center"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:scaleType="fitXY"/>
+
+
+
+    <TextView
+        android:id="@+id/statusTextView"
+        android:layout_margin="10px"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:textSize="8pt"
+        android:textColor="#000000"
+        android:gravity="center"/>
+    <Button
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/view_yuan_button"
+        android:layout_margin="10px"
+        android:id="@+id/imgChooseButton"
+        android:textSize="8pt"
+        android:text="选择图片"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/view_yuan_button"
+        android:layout_margin="10px"
+        android:id="@+id/startRecognitionButton"
+        android:textSize="8pt"
+        android:text="开始识别"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>
