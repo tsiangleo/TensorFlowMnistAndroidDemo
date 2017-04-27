@@ -10,71 +10,59 @@ import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 import java.util.Arrays;
 
 
-/**
- * Created by tsiangleo on 17-2-17.
- */
-
-
 public class RecognitionService {
 
     public static final String TAG = "RecognitionService";
 
-    public static final String MODEL_FILE = "file:///android_asset/mnist_output.pb"; //模型存放路径
+    public static final String MODEL_FILE = "file:///android_asset/mnist-tf1.0.1.pb"; //asserts目录下的pb文件名字
+    public static final String INPUT_NODE = "input";       //输入节点的名称
+    public static final String OUTPUT_NODE = "out_softmax";  //输出节点的名称
+    public static final String KEEP_PROB_NODE = "keep_prob_placeholder"; // keep_prob节点的名称
 
-    public static final String INPUT_NODE = "input";       //模型中输入变量的名称
-    public static final String OUTPUT_NODE = "out_softmax";  //模型中输出变量的名称
-
-    public static final int NUM_CLASSES = 10;               //样本集的类别数量
-
+    public static final int NUM_CLASSES = 10;   //输出节点的个数，即总的类别数。
     public static final int HEIGHT = 28;       //输入图片的像素高
     public static final int WIDTH = 28;        //输入图片的像素宽
 
-    private TensorFlowInferenceInterface inferenceInterface = new TensorFlowInferenceInterface();   //接口定义
-
-
-    private Context context;
+    private TensorFlowInferenceInterface inferenceInterface;
 
     public RecognitionService(Context context){
-        System.loadLibrary("tensorflow_inference");
-        this.context = context;
+        //初始化TensorFlowInferenceInterface对象。
+        inferenceInterface = new TensorFlowInferenceInterface();
 
-        int retCode = inferenceInterface.initializeTensorFlow(context.getAssets(), MODEL_FILE);  //接口初始化
-
-        if (retCode != 0){
-            throw new RuntimeException("inferenceInterface.initializeTensorFlow运行失败:retCode is "+retCode);
+        //根据指定的MODEL_FILE创建一个本地的TensorFlow session
+        final int status = inferenceInterface.initializeTensorFlow(context.getAssets(), MODEL_FILE);
+        if (status != 0) {
+            Log.e(TAG, "TF init status: " + status);
+            throw new RuntimeException("TF init status (" + status + ") != 0");
         }
     }
 
     /**
-     * 输入一张语谱图的像素点矩阵（行优先），每个点已经正规化了。
+     * 输入一张语图片，得到该图片属于各个类别的概率值。
      * @param bitmap
-     * @return　该语谱图属于各个标签的概率。
+     * @return　该图片属于各个类别的概率。
      */
     public float[] recognize(Bitmap bitmap){
-        float[] normalizedPixelArray = bitmap2FloatArray(bitmap);
-
-        Log.i(TAG,"normalizedPixelArray:"+Arrays.toString(normalizedPixelArray));
-
-        if(normalizedPixelArray.length != HEIGHT*WIDTH){
-            throw new IllegalArgumentException("输入图片的像素矩阵的大小不对，传入的大小为:"+normalizedPixelArray.length +",需要的大小为："+(HEIGHT*WIDTH));
+        //为输入节点准备数据
+        float[] pixelArray = bitmapToFloatArray(bitmap);
+        Log.i(TAG,"pixelArray:"+Arrays.toString(pixelArray));
+        if(pixelArray.length != HEIGHT*WIDTH){
+            throw new IllegalArgumentException("输入图片的像素矩阵的大小不对，传入的大小为:"+pixelArray.length +",需要的大小为："+(HEIGHT*WIDTH));
         }
 
-        inferenceInterface.fillNodeFloat(INPUT_NODE, new int[]{1, HEIGHT, WIDTH}, normalizedPixelArray);  //送入输入数据
-        inferenceInterface.fillNodeFloat("keep_prob_placeholder",new int[]{1},new float[]{1.0f});
+        // 输入数据
+        inferenceInterface.fillNodeFloat(INPUT_NODE, new int[]{1, HEIGHT, WIDTH}, pixelArray);
+        inferenceInterface.fillNodeFloat(KEEP_PROB_NODE,new int[]{1},new float[]{1.0f});
 
+        //进行模型的推理
+        inferenceInterface.runInference(new String[]{OUTPUT_NODE});
 
-        int retCode = inferenceInterface.runInference(new String[]{OUTPUT_NODE});     //进行模型的推理
-
-        if (retCode != 0){
-            throw new RuntimeException("inferenceInterface.runInference运行失败:retCode is "+retCode);
-        }
-
+        //获取输出节点的输出信息
         float[] outputs = new float[NUM_CLASSES];    //用于存储模型的输出数据
         inferenceInterface.readNodeFloat(OUTPUT_NODE, outputs); //获取输出数据
 
         return outputs;
     }
-
 
     public static int argmax(float[] prob){
         int result = 0;
@@ -87,11 +75,11 @@ public class RecognitionService {
     }
 
     /**
-     * 将bitmap转为（按行优先）一个float数组。其中的每个像素点都正则化到0到1之间。
+     * 将bitmap转为（按行优先）一个float数组。其中的每个像素点都归一化到0~1之间。
      * @param bitmap 灰度图，r,g,b分量都相等。
      * @return
      */
-    public static float[] bitmap2FloatArray(Bitmap bitmap){
+    public static float[] bitmapToFloatArray(Bitmap bitmap){
         int height = bitmap.getHeight();
         int width = bitmap.getWidth();
         float[] result = new float[height*width];
